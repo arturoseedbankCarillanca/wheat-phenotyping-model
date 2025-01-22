@@ -5,6 +5,7 @@ This repository contains scripts and a pre-trained model to process wheat spike 
 ## 📂 Repository Structure
 
 wheat-phenotyping-model/
+
 ├── Entrenamiento_nuevo.py          # Script to train a new SVR model using spike metrics
 ├── procesamiento_img.py            # Script to process images and extract phenotypic metrics
 ├── procesamiento_con_prediccion.py # Script to process images and predict the number of spikelets
