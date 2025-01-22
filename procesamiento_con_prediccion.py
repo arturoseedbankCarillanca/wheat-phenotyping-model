@@ -1,3 +1,14 @@
+import pandas as pd
+import joblib
+from sklearn.model_selection import train_test_split, cross_val_score
+from sklearn.linear_model import LinearRegression
+from sklearn.ensemble import RandomForestRegressor
+from sklearn.neighbors import KNeighborsRegressor
+from sklearn.metrics import mean_squared_error, mean_absolute_error, r2_score
+from openpyxl import Workbook
+from joblib import dump, load
+from sklearn.svm import SVR
+from sklearn.ensemble import AdaBoostRegressor
 import cv2 as cv
 import numpy as np
 import pandas as pd
@@ -6,12 +17,11 @@ lista_n_ima=list(range(56,86)) + list(range(101,146)) + list(range(151,187))+ li
 
 lista_negra=[116,117,118,119,120,169,172,202,203,205,270,341,342,343,346,348,350,358,359,360,362,364,367,368,388,389,390,391,392,396,397,399,400,401,402,406,414,418,429,452,459,460,464,513,613,674,698,890,956,961,962,963,964,965,977,978,979,982,1005,1008,1010,1022,1023,1027,1028,1032,1033,1036,1037,1038,1039,1040,1041,1042,1048,1060,1073,1074,1075,1093,1116,1117,1119,1136,1163,1164,1172,1173,1178,1179,1180,1198,1208,1215,1221,1225,1238,1242,1263,1268,1269,1271,1272,1273,1274,1275,1282,1284,1294,1304,1340,1534,1778,1311,1312]
 lista_n_ima_nueva = [item for item in lista_n_ima if item not in lista_negra]
-def prediccion_con_img():
+def prediccion_con_img_prediccion():
     base_datos=pd.DataFrame()
     for numero in lista_n_ima_nueva:
-       
         data_=pd.DataFrame()
-        imagen1 = cv.imread(f'/home/arcgis/Escritorio/images_python/pruebas_im/Espigas_arturo/JPG_trim_high_resolution/{numero}.JPG')
+        imagen1 = cv.imread(f'/home/arcgis/Escritorio/images_python/pruebas_im/Espigas_arturo/JPG_trim_high_resolution/{numero}.JPG') #Esto cambiar a imagenes de prueba que no sean las que usamos en el modelo y que se tengan datos
 
         # Ajusta las dimensiones de la imagen 
         scale_percent = 50
@@ -48,8 +58,6 @@ def prediccion_con_img():
             area_pixel = cv.contourArea(contour)
              
             if 1000000 > area_pixel > 500:
-                cv.drawContours(resized, contour, -1, (0, 255, 0), 3)  # Dibuja el contorno
-
                 # Encuentra el rectángulo de área mínima
                 rect = cv.minAreaRect(contour)
                 # Obtiene el ancho y el alto del rectángulo de área mínima
@@ -69,30 +77,35 @@ def prediccion_con_img():
         area_total=sum(area_suma)
         largo_total=sum(largo_suma)
         ancho_mayor_=max(ancho_mayor)
+        
+        
+        #prediccion
+
+        model = joblib.load('model_NUEVO_SVR.joblib')
+        # Predicting the Test set results
+        #h_cm=7.44
+        #w_cm=1.69
+        #area_cm=12.57
+        # creamos un dataframe con los datos de entrada
+        data_pred = pd.DataFrame([[h_cm, w_cm, area_cm]], columns=["largo", "ancho", "area"])
+        # Predice la cantidad de espiguillas
+        prediccion_espi= model.predict(data_pred)
+    
+
         print(f"Area del contorno en cm^2: {area_total}")
         print(f"Dimensiones de la caja delimitadora en cm: {largo_total} x {ancho_mayor_}")
-        
-        #prediccion_espi=prediccion(area_cm, w_cm, h_cm)
+        print(f"Cantidad de espigullas: {prediccion_espi}")
+
         data_['Numero']=[numero]
         data_['area']=[area_total]
         data_['ancho']=[ancho_mayor_]
         data_['largo']=[largo_total]
+        data_['espiguillas']=[largo_total]
         if base_datos.empty:
             base_datos=data_
         else:
             base_datos=pd.concat([base_datos,data_],axis=0)
+    base_datos.to_excel('metricas_predicción.xlsx')
 
-
-        #print(f'la cantidad de espiguillas son: {prediccion_espi}')
-        #cv.imshow('Contours', threshold)
-        #cv.waitKey(0)
-        #cv.destroyAllWindows()
-        # Guarda la imagen
-        cv.imwrite(f'/home/arcgis/Escritorio/images_python/pruebas_im/imagenes_cont/imagen_procesada_{numero}.jpg', resized)
-        cv.imwrite(f'/home/arcgis/Escritorio/images_python/pruebas_im/imagenes_threshold/imagen_procesada_{numero}.jpg', threshold)
-        cv.imwrite(f'/home/arcgis/Escritorio/images_python/pruebas_im/imagenes_eroded/imagen_procesada_{numero}.jpg', eroded)
-    base_datos.to_excel('metricas_nuevas_2.xlsx')
-
-#para que inicie la función
-prediccion_con_img()
-a=1
+#para iniciar función
+prediccion_con_img_prediccion()
